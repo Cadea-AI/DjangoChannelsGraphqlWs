@@ -13,7 +13,6 @@ import django.core.serializers
 import django.db
 import graphql
 import graphql.error
-import graphql.execution.executors.asyncio
 import promise
 import rx
 
@@ -26,6 +25,7 @@ LOG = logging.getLogger(__name__)
 # WebSocket subprotocols used for the GraphQL.
 GRAPHQL_WS_SUBPROTOCOL = "graphql-ws"
 TRANSPORT_WS_SUBPROTOCOL = "graphql-transport-ws"
+
 
 class GraphqlWsConsumer(ch_websocket.AsyncJsonWebsocketConsumer):
     """Channels consumer for the WebSocket GraphQL backend.
@@ -240,7 +240,7 @@ class GraphqlWsConsumer(ch_websocket.AsyncJsonWebsocketConsumer):
         self._background_tasks.clear()
 
     async def receive_json(self, content):  # pylint: disable=arguments-differ
-        print(content['type'])
+        print(content["type"])
         """Process WebSocket message received from the client.
 
         NOTE: We force 'STOP' message processing to wait until 'START'
@@ -263,7 +263,6 @@ class GraphqlWsConsumer(ch_websocket.AsyncJsonWebsocketConsumer):
         msg_type = content["type"].upper()
 
         if msg_type == "CONNECTION_INIT":
-            
             task = self._on_gql_connection_init(payload={})
 
         elif msg_type == "CONNECTION_TERMINATE":
@@ -496,8 +495,7 @@ class GraphqlWsConsumer(ch_websocket.AsyncJsonWebsocketConsumer):
                         await asyncio.sleep(self.send_keepalive_every)
                         await self._send_gql_connection_keep_alive()
 
-                self._keepalive_task = asyncio.ensure_future(
-                    keepalive_sender())
+                self._keepalive_task = asyncio.ensure_future(keepalive_sender())
                 # Immediately send keepalive message cause it is
                 # required by the protocol description.
                 await self._send_gql_connection_keep_alive()
@@ -614,7 +612,6 @@ class GraphqlWsConsumer(ch_websocket.AsyncJsonWebsocketConsumer):
                         register_middleware, *self.middleware, wrap_in_promise=False
                     ),
                     allow_subscriptions=True,
-                    executor=graphql.execution.executors.asyncio.AsyncioExecutor(),
                 )
             )
 
@@ -746,8 +743,7 @@ class GraphqlWsConsumer(ch_websocket.AsyncJsonWebsocketConsumer):
         waitlist = []
         for group in groups:
             self._sids_by_group.setdefault(group, []).append(operation_id)
-            waitlist.append(self._channel_layer.group_add(
-                group, self.channel_name))
+            waitlist.append(self._channel_layer.group_add(group, self.channel_name))
         notifier_task = self._spawn_background_task(notifier())
         self._subscriptions[operation_id] = self._SubInf(
             groups=groups,
@@ -893,8 +889,7 @@ class GraphqlWsConsumer(ch_websocket.AsyncJsonWebsocketConsumer):
         self._assert_thread()
         LOG.error("GraphQL query processing error: %s", error)
         await self.send_json(
-            {"type": "error", "id": operation_id,
-                "payload": {"errors": [error]}}
+            {"type": "error", "id": operation_id, "payload": {"errors": [error]}}
         )
 
     async def _send_gql_complete(self, operation_id):
